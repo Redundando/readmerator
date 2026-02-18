@@ -1,14 +1,17 @@
 # readmerator
 
-Fetch and cache README files for Python dependencies to use with AI coding assistants.
+> Supercharge your AI coding assistant with instant access to all your dependency documentation.
 
-## Problem
+Fetch and cache README files for Python dependencies, making them instantly available to AI assistants like Amazon Q, GitHub Copilot, and Cursor.
 
-When working with AI coding assistants (like Amazon Q, GitHub Copilot, etc.), they can't automatically access documentation for your imported packages. This means you have to manually look up package docs or copy-paste them into context.
+## Why?
 
-## Solution
+AI coding assistants are powerful, but they don't automatically know about the packages you're using. You end up:
+- Manually looking up documentation
+- Copy-pasting docs into context
+- Getting generic answers instead of package-specific help
 
-`readmerator` automatically fetches README files for all your project dependencies and saves them locally. You can then use your AI assistant's context features (like `@folder`) to include all documentation at once.
+**readmerator** solves this by automatically fetching all your dependency READMEs into a local folder that your AI can reference.
 
 ## Installation
 
@@ -16,44 +19,62 @@ When working with AI coding assistants (like Amazon Q, GitHub Copilot, etc.), th
 pip install readmerator
 ```
 
+## Quick Start
+
+```bash
+# In your project directory
+readmerator
+
+# Then in your AI assistant
+@folder .ai-docs
+```
+
+That's it! Your AI now has full context on all your dependencies.
+
+## How It Works
+
+1. **Finds** your `requirements.txt`
+2. **Fetches** README files from PyPI and GitHub for each package
+3. **Saves** them to `.ai-docs/` with metadata headers
+4. **You reference** the folder in your AI assistant
+
 ## Usage
 
-Run in your project directory:
+### Basic
 
 ```bash
 readmerator
 ```
 
-This will:
-1. Find your `requirements.txt`
-2. Fetch README files from PyPI and GitHub for each package
-3. Save them to `.ai-docs/` directory
-
-Then in your AI assistant, use:
-```
-@folder .ai-docs
-```
-
-Now the AI has access to all your dependency documentation!
-
-## Options
+### With Options
 
 ```bash
-readmerator --output-dir docs/packages  # Custom output directory
-readmerator --source requirements.txt   # Specify requirements file
-readmerator --verbose                   # Show detailed progress
+# Custom output directory
+readmerator --output-dir docs/packages
+
+# Specify requirements file
+readmerator --source requirements.txt
+
+# Verbose output (shows source: PyPI vs GitHub)
+readmerator --verbose
 ```
 
-## Example
+### Example Output
 
 ```bash
-$ readmerator
-Found 15 packages in requirements.txt
+$ readmerator --verbose
+Found 16 packages in requirements.txt
 Fetching READMEs to .ai-docs/
 
-✓ Successfully fetched: 14
+Fetching flask...
+  ✓ flask: Saved (12453 bytes) from PyPI
+Fetching fastapi...
+  ✓ fastapi: Saved (23891 bytes) from GitHub
+...
+
+✓ Successfully fetched: 15
 ✗ Failed: 1
-  Failed packages: some-private-package
+  Failed packages: private-internal-package
 
 READMEs saved to .ai-docs/
 Use '@folder .ai-docs' in your AI assistant to include documentation
@@ -66,27 +87,51 @@ Each package gets a markdown file with metadata:
 ```markdown
 ---
 Package: requests
-Version: 2.31.0
+Version: 2.32.5
 Source: https://github.com/psf/requests
 Fetched: 2024-01-15 10:30:00
 ---
 
-[README content here...]
+# Requests
+
+**Requests** is a simple, yet elegant, HTTP library.
+...
 ```
 
 ## Features
 
-- ✓ Fetches from PyPI and GitHub
-- ✓ Async/concurrent for speed
-- ✓ Graceful error handling
-- ✓ Progress indicators
-- ✓ Minimal dependencies
+- **Smart Fetching**: Tries PyPI first, falls back to GitHub
+- **Fast**: Async/concurrent fetching
+- **Reliable**: Graceful error handling for missing packages
+- **Informative**: Progress indicators and detailed verbose mode
+- **Lightweight**: Minimal dependencies (just aiohttp)
+
+## AI Assistant Integration
+
+### Amazon Q
+```
+@folder .ai-docs
+```
+
+### GitHub Copilot
+```
+#file:.ai-docs/*
+```
+
+### Cursor
+```
+@Docs .ai-docs
+```
 
 ## Requirements
 
 - Python 3.8+
 - aiohttp
 
+## Contributing
+
+Contributions welcome! Feel free to open issues or PRs on [GitHub](https://github.com/Redundando/readmerator).
+
 ## License
 
-MIT
+MIT © Arved Klöhn
