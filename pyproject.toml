@@ -32,5 +32,5 @@ dependencies = [
 readmerator = "readmerator.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/arvedklohen/readmerator"
-Repository = "https://github.com/arvedklohen/readmerator"
+Homepage = "https://github.com/Redundando/readmerator"
+Repository = "https://github.com/Redundando/readmerator"
