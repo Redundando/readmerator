@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "readmerator"
+version = "0.1.0"
+description = "Fetch and cache README files for Python dependencies to use with AI assistants"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Arved Klöhn"}
+]
+keywords = ["ai", "documentation", "readme", "pypi", "github", "context", "assistant"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "aiohttp>=3.8.0",
+]
+
+[project.scripts]
+readmerator = "readmerator.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/arvedklohen/readmerator"
+Repository = "https://github.com/arvedklohen/readmerator"
