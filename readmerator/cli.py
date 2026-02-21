@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 import sys
 
-from .parser import parse_requirements_txt, find_dependency_file
+from .parser import parse_requirements_txt, find_dependency_file, find_and_parse_all_dependencies
 from .fetcher import fetch_all_readmes
 
 
@@ -40,19 +40,16 @@ def main():
         if not dep_file.exists():
             print(f"Error: {dep_file} not found", file=sys.stderr)
             sys.exit(1)
+        packages = parse_requirements_txt(dep_file)
     else:
-        dep_file = find_dependency_file(Path.cwd())
-        if not dep_file:
-            print("Error: No requirements.txt found in current directory", file=sys.stderr)
-            sys.exit(1)
+        # Parse all dependency files in directory
+        packages = find_and_parse_all_dependencies(Path.cwd())
     
-    # Parse dependencies
-    packages = parse_requirements_txt(dep_file)
     if not packages:
-        print(f"No packages found in {dep_file}")
+        print("No packages found in dependency files")
         sys.exit(0)
     
-    print(f"Found {len(packages)} packages in {dep_file}")
+    print(f"Found {len(packages)} packages")
     print(f"Fetching READMEs to {args.output_dir}/")
     
     # Fetch READMEs

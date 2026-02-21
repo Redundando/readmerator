@@ -33,7 +33,7 @@ That's it! Your AI now has full context on all your dependencies.
 
 ## How It Works
 
-1. **Finds** your `requirements.txt`
+1. **Finds** all your dependency files (`requirements.txt`, `pyproject.toml`, `setup.py`, `setup.cfg`, `Pipfile`, `environment.yml`)
 2. **Fetches** README files from PyPI and GitHub for each package
 3. **Saves** them to `.ai-docs/` with metadata headers
 4. **You reference** the folder in your AI assistant
@@ -52,18 +52,26 @@ readmerator
 # Custom output directory
 readmerator --output-dir docs/packages
 
-# Specify requirements file
+# Specify a specific requirements file
 readmerator --source requirements.txt
 
 # Verbose output (shows source: PyPI vs GitHub)
 readmerator --verbose
 ```
 
+By default, readmerator automatically detects and parses all dependency files in your project:
+- `requirements.txt`
+- `pyproject.toml` (PEP 621 and Poetry)
+- `setup.py`
+- `setup.cfg`
+- `Pipfile` (Pipenv)
+- `environment.yml` (Conda)
+
 ### Example Output
 
 ```bash
 $ readmerator --verbose
-Found 16 packages in requirements.txt
+Found 16 packages
 Fetching READMEs to .ai-docs/
 
 Fetching flask...
@@ -100,6 +108,7 @@ Fetched: 2024-01-15 10:30:00
 
 ## Features
 
+- **Multi-Format Support**: Automatically detects and parses all common Python dependency formats
 - **Smart Fetching**: Tries PyPI first, falls back to GitHub
 - **Fast**: Async/concurrent fetching
 - **Reliable**: Graceful error handling for missing packages
@@ -127,6 +136,7 @@ Fetched: 2024-01-15 10:30:00
 
 - Python 3.8+
 - aiohttp
+- tomli (for Python < 3.11)
 
 ## Contributing
 
