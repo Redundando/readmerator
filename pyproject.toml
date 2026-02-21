@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "readmerator"
-version = "0.1.1"
+version = "0.1.2"
 description = "Fetch and cache README files for Python dependencies to use with AI assistants"
 readme = "README.md"
 requires-python = ">=3.8"
