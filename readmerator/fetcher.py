@@ -187,23 +187,76 @@ async def fetch_and_save_npm(session: aiohttp.ClientSession, package: str, outpu
 
 async def fetch_readme_from_url(url: str, output_dir: Path, custom_name: Optional[str] = None, verbose: bool = False) -> bool:
     """Fetch README from a custom URL."""
-    import re
     from urllib.parse import urlparse
     
     async with aiohttp.ClientSession() as session:
         try:
+            # Check if it's a PyPI or npm package URL
+            if "pypi.org/project/" in url:
+                # Extract package name from PyPI URL
+                match = re.search(r"pypi\.org/project/([^/]+)", url)
+                if match:
+                    package_name = match.group(1)
+                    name = custom_name or package_name
+                    if verbose:
+                        print(f"Fetching {name} from PyPI...")
+                    result = await fetch_package_readme(session, package_name)
+                    if result:
+                        content, version, source_url, source_type = result
+                        output_dir.mkdir(parents=True, exist_ok=True)
+                        readme_content = create_readme_content(name, content, version, source_url)
+                        output_file = output_dir / f"{name}.md"
+                        output_file.write_text(readme_content, encoding="utf-8")
+                        print(f"✓ Saved {name} to {output_file}")
+                        return True
+                print(f"✗ Failed to fetch {package_name} from PyPI")
+                return False
+            
+            elif "npmjs.com/package/" in url:
+                # Extract package name from npm URL
+                match = re.search(r"npmjs\.com/package/([^/]+)", url)
+                if match:
+                    package_name = match.group(1)
+                    name = custom_name or package_name.replace("/", "_").replace("@", "")
+                    if verbose:
+                        print(f"Fetching {name} from npm...")
+                    result = await fetch_npm_readme(session, package_name)
+                    if result:
+                        content, version, source_url, source_type = result
+                        output_dir.mkdir(parents=True, exist_ok=True)
+                        readme_content = create_readme_content(name, content, version, source_url)
+                        output_file = output_dir / f"{name}.md"
+                        output_file.write_text(readme_content, encoding="utf-8")
+                        print(f"✓ Saved {name} to {output_file}")
+                        return True
+                print(f"✗ Failed to fetch {package_name} from npm")
+                return False
+            
+            # Handle GitHub and raw URLs
+            parsed = urlparse(url)
+            if "github.com" in url:
+                parts = parsed.path.strip("/").split("/")
+                auto_name = parts[1] if len(parts) >= 2 else "readme"  # Use repo name
+            else:
+                auto_name = parsed.path.split("/")[-1].replace(".md", "") or "readme"
+            
+            name = custom_name or auto_name
+            
             # Determine if it's a GitHub repo URL or direct README URL
-            if "github.com" in url and "/blob/" not in url and not url.endswith(".md"):
-                # Convert GitHub repo URL to raw README URL
+            if "github.com" in url and "/raw/" not in url and "/blob/" not in url and not url.endswith(".md"):
+                # It's a GitHub repo URL - convert to raw README URL
                 readme_url = await _get_github_readme_url(session, url)
                 if not readme_url:
                     print(f"✗ Could not find README in GitHub repo: {url}")
                     return False
+            elif "github.com" in url and "/blob/" in url:
+                # Convert blob URL to raw URL
+                readme_url = url.replace("/blob/", "/raw/")
             else:
                 readme_url = url
             
             if verbose:
-                print(f"Fetching from {readme_url}...")
+                print(f"Fetching {name} from {readme_url}...")
             
             # Fetch content
             async with session.get(readme_url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
@@ -212,18 +265,6 @@ async def fetch_readme_from_url(url: str, output_dir: Path, custom_name: Optiona
                     return False
                 content = await resp.text()
             
-            # Determine name
-            if custom_name:
-                name = custom_name
-            else:
-                # Extract from URL
-                parsed = urlparse(url)
-                if "github.com" in url:
-                    parts = parsed.path.strip("/").split("/")
-                    name = f"{parts[0]}_{parts[1]}" if len(parts) >= 2 else "readme"
-                else:
-                    name = parsed.path.split("/")[-1].replace(".md", "") or "readme"
-            
             # Save
             output_dir.mkdir(parents=True, exist_ok=True)
             output_file = output_dir / f"{name}.md"
@@ -231,7 +272,7 @@ async def fetch_readme_from_url(url: str, output_dir: Path, custom_name: Optiona
             readme_content = create_readme_content(name, content, "custom", url)
             output_file.write_text(readme_content, encoding="utf-8")
             
-            print(f"✓ Saved to {output_file}")
+            print(f"✓ Saved {name} to {output_file}")
             return True
             
         except Exception as e:

@@ -66,6 +66,12 @@ readmerator --max-depth 2
 
 # Fetch README from a custom URL
 readmerator --url https://github.com/pallets/flask --name flask-docs
+
+# Fetch from PyPI
+readmerator --url https://pypi.org/project/requests
+
+# Fetch from npm
+readmerator --url https://www.npmjs.com/package/react
 ```
 
 ### Supported Formats
@@ -146,7 +152,7 @@ Fetched: 2024-01-15 10:30:00
 - **Multi-Language Support**: Python (PyPI) and npm packages
 - **Recursive Scanning**: Finds dependencies in subdirectories (monorepos, nested projects)
 - **Multi-Format Support**: Automatically detects all common Python and npm dependency formats
-- **Custom URLs**: Fetch READMEs from any URL (GitHub repos, private docs, etc.)
+- **Custom URLs**: Fetch READMEs from PyPI, npm, GitHub, or any URL
 - **Smart Fetching**: Tries PyPI/npm first, falls back to GitHub
 - **Fast**: Async/concurrent fetching
 - **Reliable**: Graceful error handling for missing packages
