@@ -1,10 +1,11 @@
-"""Parse Python dependency files."""
+"""Parse Python and npm dependency files."""
 
 import re
 import ast
+import json
 import configparser
 from pathlib import Path
-from typing import List, Set
+from typing import List, Set, Dict
 
 
 def parse_requirements_txt(file_path: Path) -> List[str]:
@@ -74,30 +75,31 @@ def parse_pyproject_toml(file_path: Path) -> List[str]:
 
 def parse_setup_py(file_path: Path) -> List[str]:
     """Parse setup.py and extract package names."""
-    packages: Set[str] = set()
-    
     if not file_path.exists():
         return []
     
     try:
-        content = file_path.read_text(encoding="utf-8")
-        tree = ast.parse(content)
+        tree = ast.parse(file_path.read_text(encoding="utf-8"))
+        packages = set()
         
         for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name) and node.func.id == "setup":
-                    for keyword in node.keywords:
-                        if keyword.arg in ("install_requires", "requires"):
-                            if isinstance(keyword.value, ast.List):
-                                for elt in keyword.value.elts:
-                                    if isinstance(elt, ast.Constant):
-                                        match = re.match(r"^([a-zA-Z0-9_-]+)", elt.value)
-                                        if match:
-                                            packages.add(match.group(1).lower())
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "setup":
+                packages.update(_extract_setup_deps(node.keywords))
+        
+        return sorted(packages)
     except Exception:
-        pass
-    
-    return sorted(packages)
+        return []
+
+
+def _extract_setup_deps(keywords) -> Set[str]:
+    """Extract dependencies from setup() keywords."""
+    packages = set()
+    for kw in keywords:
+        if kw.arg in ("install_requires", "requires") and isinstance(kw.value, ast.List):
+            for elt in kw.value.elts:
+                if isinstance(elt, ast.Constant) and (match := re.match(r"^([a-zA-Z0-9_-]+)", elt.value)):
+                    packages.add(match.group(1).lower())
+    return packages
 
 
 def parse_setup_cfg(file_path: Path) -> List[str]:
@@ -190,12 +192,40 @@ def parse_environment_yml(file_path: Path) -> List[str]:
     return sorted(packages)
 
 
-def find_and_parse_all_dependencies(directory: Path) -> List[str]:
-    """Find and parse all dependency files in directory."""
-    all_packages: Set[str] = set()
+def parse_package_json(file_path: Path) -> List[str]:
+    """Parse package.json and extract npm package names."""
+    if not file_path.exists():
+        return []
     
-    # Try all formats
-    parsers = [
+    try:
+        data = json.loads(file_path.read_text(encoding="utf-8"))
+        packages = set()
+        
+        for section in ["dependencies", "devDependencies"]:
+            if section in data:
+                packages.update(data[section].keys())
+        
+        return sorted(packages)
+    except Exception:
+        return []
+
+
+def find_and_parse_all_dependencies(directory: Path, recursive: bool = True, max_depth: int | None = None) -> Dict[str, List[str]]:
+    """Find and parse all dependency files in directory.
+    
+    Args:
+        directory: Root directory to search
+        recursive: If True, scan subdirectories recursively
+        max_depth: Maximum depth to recurse (None = unlimited)
+    
+    Returns:
+        Dict with 'python' and 'npm' keys containing package lists
+    """
+    python_packages: Set[str] = set()
+    npm_packages: Set[str] = set()
+    exclude_dirs = {'.venv', 'venv', 'env', '.env', 'node_modules', '.git', '__pycache__', 'build', 'dist', '.tox', '.pytest_cache', '.mypy_cache', 'site-packages'}
+    
+    python_parsers = [
         ("requirements.txt", parse_requirements_txt),
         ("pyproject.toml", parse_pyproject_toml),
         ("setup.py", parse_setup_py),
@@ -204,13 +234,34 @@ def find_and_parse_all_dependencies(directory: Path) -> List[str]:
         ("environment.yml", parse_environment_yml),
     ]
     
-    for filename, parser in parsers:
-        file_path = directory / filename
-        packages = parser(file_path)
-        if packages:
-            all_packages.update(packages)
+    npm_parsers = [
+        ("package.json", parse_package_json),
+    ]
     
-    return sorted(all_packages)
+    def scan_directory(path: Path, depth: int = 0):
+        if max_depth is not None and depth > max_depth:
+            return
+        
+        for filename, parser in python_parsers:
+            packages = parser(path / filename)
+            if packages:
+                python_packages.update(packages)
+        
+        for filename, parser in npm_parsers:
+            packages = parser(path / filename)
+            if packages:
+                npm_packages.update(packages)
+        
+        if recursive:
+            for item in path.iterdir():
+                if item.is_dir() and item.name not in exclude_dirs:
+                    scan_directory(item, depth + 1)
+    
+    scan_directory(directory)
+    return {
+        "python": sorted(python_packages),
+        "npm": sorted(npm_packages)
+    }
 
 
 def find_dependency_file(directory: Path) -> Path | None:
