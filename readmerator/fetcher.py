@@ -203,9 +203,10 @@ async def fetch_readme_from_url(url: str, output_dir: Path, custom_name: Optiona
                     result = await fetch_package_readme(session, package_name)
                     if result:
                         content, version, source_url, source_type = result
-                        output_dir.mkdir(parents=True, exist_ok=True)
+                        python_dir = output_dir / "python"
+                        python_dir.mkdir(parents=True, exist_ok=True)
                         readme_content = create_readme_content(name, content, version, source_url)
-                        output_file = output_dir / f"{name}.md"
+                        output_file = python_dir / f"{name}.md"
                         output_file.write_text(readme_content, encoding="utf-8")
                         print(f"✓ Saved {name} to {output_file}")
                         return True
@@ -223,9 +224,10 @@ async def fetch_readme_from_url(url: str, output_dir: Path, custom_name: Optiona
                     result = await fetch_npm_readme(session, package_name)
                     if result:
                         content, version, source_url, source_type = result
-                        output_dir.mkdir(parents=True, exist_ok=True)
+                        npm_dir = output_dir / "npm"
+                        npm_dir.mkdir(parents=True, exist_ok=True)
                         readme_content = create_readme_content(name, content, version, source_url)
-                        output_file = output_dir / f"{name}.md"
+                        output_file = npm_dir / f"{name}.md"
                         output_file.write_text(readme_content, encoding="utf-8")
                         print(f"✓ Saved {name} to {output_file}")
                         return True
@@ -265,7 +267,7 @@ async def fetch_readme_from_url(url: str, output_dir: Path, custom_name: Optiona
                     return False
                 content = await resp.text()
             
-            # Save
+            # Save to root output_dir for generic URLs
             output_dir.mkdir(parents=True, exist_ok=True)
             output_file = output_dir / f"{name}.md"
             
